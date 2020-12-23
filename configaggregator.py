@@ -78,52 +78,52 @@ def assume_role(aws_account_number, role_name):
 
 
 def lambda_handler(event, context):
-    # try:
-    LOGGER.debug('REQUEST RECEIVED:\n %s', event)
-    LOGGER.debug('REQUEST RECEIVED:\n %s', context)
-    session = boto3.session.Session()
-    aws_account_dict = dict()
-    aws_account_dict = get_account_list()
-    session = assume_role(os.environ['master_account'],os.environ['assume_role'])
-    configclient = session.client('config')
-    updateconfig = configclient.put_configuration_aggregator(
-        ConfigurationAggregatorName="LandingZoneAggregator",
-        AccountAggregationSources=[
-            {
-                'AccountIds': list(aws_account_dict.keys()),
-                'AllAwsRegions': True
-            }
-        ])
-    LOGGER.debug(updateconfig)
-    return(True)
-    #     sendResponse(event, context, responseStatus, responseData)     
-    # except:
-    #     exc_type, exc_obj, exc_tb = sys.exc_info()
-    #     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    #     print(exc_type, fname, exc_tb.tb_lineno)        
-    #     responseStatus = 'FAILED'
-    #     responseData = {'Failed': 'Failed to add route tables.'}
-    #     sendResponse(event, context, responseStatus, responseData) 
+    try:
+        LOGGER.debug('REQUEST RECEIVED:\n %s', event)
+        LOGGER.debug('REQUEST RECEIVED:\n %s', context)
+        session = boto3.session.Session()
+        aws_account_dict = dict()
+        aws_account_dict = get_account_list()
+        session = assume_role(os.environ['master_account'],os.environ['assume_role'])
+        configclient = session.client('config')
+        updateconfig = configclient.put_configuration_aggregator(
+            ConfigurationAggregatorName="LandingZoneAggregator",
+            AccountAggregationSources=[
+                {
+                    'AccountIds': list(aws_account_dict.keys()),
+                    'AllAwsRegions': True
+                }
+            ])
+        LOGGER.debug(updateconfig)
+    # return(True)
+        sendResponse(event, context, responseStatus, responseData)     
+    except:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)        
+        responseStatus = 'FAILED'
+        responseData = {'Failed': 'Failed to add route tables.'}
+        sendResponse(event, context, responseStatus, responseData) 
 
-# def sendResponse(event, context, responseStatus, responseData):
-#     responseBody = {'Status': responseStatus,
-#                     'Reason': 'See the details in CloudWatch Log Stream: ' + context.log_stream_name,
-#                     'PhysicalResourceId': context.log_stream_name,
-#                     'StackId': event['StackId'],
-#                     'RequestId': event['RequestId'],
-#                     'LogicalResourceId': event['LogicalResourceId'],
-#                     'Data': responseData}
-#     LOGGER.info('RESPONSE BODY:n' + json.dumps(responseBody))
-#     try:
-#         req = requests.put(event['ResponseURL'], data=json.dumps(responseBody))
-#         if req.status_code != 200:
-#             LOGGER.info(req.text)
-#             raise Exception('Recieved non 200 response while sending response to CFN.')
-#         return
-#     except requests.exceptions.RequestException as e:
-#         LOGGER.error(e)
-#         raise
+def sendResponse(event, context, responseStatus, responseData):
+    responseBody = {'Status': responseStatus,
+                    'Reason': 'See the details in CloudWatch Log Stream: ' + context.log_stream_name,
+                    'PhysicalResourceId': context.log_stream_name,
+                    'StackId': event['StackId'],
+                    'RequestId': event['RequestId'],
+                    'LogicalResourceId': event['LogicalResourceId'],
+                    'Data': responseData}
+    LOGGER.info('RESPONSE BODY:n' + json.dumps(responseBody))
+    try:
+        req = requests.put(event['ResponseURL'], data=json.dumps(responseBody))
+        if req.status_code != 200:
+            LOGGER.info(req.text)
+            raise Exception('Recieved non 200 response while sending response to CFN.')
+        return
+    except requests.exceptions.RequestException as e:
+        LOGGER.error(e)
+        raise
 
 
-if __name__ == "__main__":
-    lambda_handler("test", "test")
+# if __name__ == "__main__":
+#     lambda_handler("test", "test")
